@@ -36,7 +36,7 @@ public:
     ~Manager();
     long iteration;
     double iterate();
-    void outputResult();
+    void outputResult(double time);
 };
 
 #endif // MANAGER_H

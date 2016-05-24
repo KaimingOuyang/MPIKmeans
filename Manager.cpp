@@ -375,8 +375,6 @@ int Manager::adjustEmptyCluster(int emptyCluster, mat& oldCentroids, mat& newCen
     return 1;
 }
 
-
-
 double Manager::powDistEvaluate(const mat& a, const mat& b) {
     double sum = 0;
     for(int index1 = 0; index1 < features; index1++)
@@ -384,11 +382,14 @@ double Manager::powDistEvaluate(const mat& a, const mat& b) {
     return sum;
 }
 
-void Manager::outputResult() {
+void Manager::outputResult(double time) {
     uword* finalAssign;
     int* displs;
     int* recvcounts;
     if(rank == 0) {
+        FILE* ftime = fopen("MPItime","a");
+        fprintf(ftime,"%d,%d,%d,%lfs\n",nodes,clusters,features,time);
+        fclose(ftime);
         FILE* fp = fopen(outcsv, "w");
         displs = new int[size];
         recvcounts = new int[size];
