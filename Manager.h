@@ -5,13 +5,19 @@
 using namespace arma;
 class Manager {
 private:
+
+    struct{
+        double v;
+        int id;
+    }local,global;
+
     mat datasetT;
     mat dataset;
     mat centroids;
     mat centroidsOther;
-    mat variance;
-    Mat<long> counts;
-    mat ddt;
+    Col<double> variance;
+    Col<long> counts;
+    //mat ddt;
     uword* assignments;
     int rank,size;
     long head;

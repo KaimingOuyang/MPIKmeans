@@ -24,10 +24,12 @@ int main(int argc, char* argv[]) {
     do {
         diff = manager.iterate();
         //fprintf(fp,"Iteration:%d,diff:%lf\n",manager.iteration,diff);
-        printf("Iteration:%ld\n",manager.iteration);
+        //printf("diff:%lf,Iteration:%ld,rank:%d\n",manager.iteration,diff,rank);
+        //fflush(stdout);
     } while(diff > 1e-5 && manager.iteration < 1000);
     //fclose(fp);
     manager.outputResult();
+    MPI_Finalize();
     return 0;
 }
 

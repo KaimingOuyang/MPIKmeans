@@ -1,1 +1,1 @@
-mpiexec -n 3 ./kmeans 100000 5 4 ik.csv centroids.csv out.csv
+mpiexec -n 4 ./kmeans 10 32 4 ik.csv centroids.csv out.csv
