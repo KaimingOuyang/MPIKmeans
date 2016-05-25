@@ -5,6 +5,7 @@
 #include <float.h>
 #include <fstream>
 #include <iomanip>
+#include <time.h>
 using namespace arma;
 using namespace std;
 // define DBL_MAX
@@ -172,7 +173,12 @@ double Manager::iterationKmeans(mat& oldCentroids, mat& newCentroids) {
     }
 
     // get every distance between all nodes and centroids
+    //struct timespec st, ed;
+    //clock_gettime(CLOCK_REALTIME,&st);
     mat dist = dataset * oldCentroids;
+    //clock_gettime(CLOCK_REALTIME,&ed);
+    //double tol = (double)ed.tv_sec - st.tv_sec + (double)(ed.tv_nsec - st.tv_nsec) / 1000000000;
+    //printf("Gflops:%lfG/s\n", 2.0 * features * nodes * clusters / tol / 1000000000.0);
     dist *= -2;
     //dist.each_col() += ddt;
     mat distT = dist.t();
@@ -387,8 +393,8 @@ void Manager::outputResult(double time) {
     int* displs;
     int* recvcounts;
     if(rank == 0) {
-        FILE* ftime = fopen("MPItime","a");
-        fprintf(ftime,"%d,%d,%d,%lfs\n",nodes,clusters,features,time);
+        FILE* ftime = fopen("MPItime", "a");
+        fprintf(ftime, "%d,%d,%d,%lfs\n", nodes, clusters, features, time);
         fclose(ftime);
         FILE* fp = fopen(outcsv, "w");
         displs = new int[size];
