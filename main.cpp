@@ -18,10 +18,10 @@ int main(int argc, char* argv[]) {
         exit(1);
     }
 
-    double st = MPI_Wtime();
-    double diff;
     Manager manager(rank, size, argc, argv);
     //FILE* fp = fopen("diffout","w");
+    double diff;
+    double st = MPI_Wtime();
     do {
         diff = manager.iterate();
         //fprintf(fp,"Iteration:%d,diff:%lf\n",manager.iteration,diff);
@@ -34,4 +34,3 @@ int main(int argc, char* argv[]) {
     MPI_Finalize();
     return 0;
 }
-

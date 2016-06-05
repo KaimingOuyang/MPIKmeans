@@ -24,7 +24,7 @@ private:
     long rowNum,nodes,clusters,features;
     //typedef mat* MatP;
     char* outcsv;
-
+    int emptyFlag;
     void scatterNodeToProcess(char* strFile);
     void broadcastCentroidsToProcess(char* strFile);
     int adjustEmptyCluster(int index, mat& oldCentroids, mat& newCentroids);
