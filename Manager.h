@@ -11,9 +11,9 @@ private:
         int id;
     }local,global;
 
-    mat dataset;
-    mat centroids;
-    mat centroidsOther;
+    mat *dataset;
+    mat *centroids;
+    mat *centroidsOther;
     Col<double> variance;
     Col<long> counts;
     //mat ddt;

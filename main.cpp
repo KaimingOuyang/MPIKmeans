@@ -14,7 +14,7 @@ int main(int argc, char* argv[]) {
     MPI_Comm_size(MPI_COMM_WORLD, &size);
     if(argc != 7) {  // Until now, it is 7 parameters
         cout << "Parameter Error. Input format: ./applicationName nodes features clusters"
-             " nodes.in centroids.in output.out" << endl;
+             "centroids.in" << endl;
         exit(1);
     }
 
@@ -30,7 +30,7 @@ int main(int argc, char* argv[]) {
     } while(diff > 1e-5 && manager.iteration < 1000);
     //fclose(fp);
     st = MPI_Wtime() - st;
-    manager.outputResult(st);
+    // manager.outputResult(st);
     MPI_Finalize();
     return 0;
 }
