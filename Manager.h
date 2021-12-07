@@ -11,7 +11,6 @@ private:
         int id;
     }local,global;
 
-    mat datasetT;
     mat dataset;
     mat centroids;
     mat centroidsOther;

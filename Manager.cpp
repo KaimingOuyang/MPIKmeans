@@ -28,7 +28,6 @@ Manager::Manager(int rank, int size, int argc, char* argv[]) {
     counts = Col<long>(clusters);
     assignments = new uword[rowNum];
     dataset = mat(rowNum, features, fill::randu);
-    datasetT = dataset.t();
     // scatterNodeToProcess(argv[4]);
     // broadcastCentroidsToProcess(argv[5]);
     //printf("Finish load.\n");
@@ -120,7 +119,8 @@ void Manager::broadcastCentroidsToProcess(char* strFile) {
     }
     MPI_Bcast(tmpCent, clusters * features, MPI_DOUBLE, 0, MPI_COMM_WORLD);
     centroids = mat(tmpCent, clusters, features).t();
-    centroidsOther = mat(clusters, features).t();
+    centroidsOther = mat(clusters, features, fill::zeros).t();
+    delete tmpCent;
     //if(rank == 0)
     //centroids.print();
     /*
@@ -204,7 +204,7 @@ double Manager::iterationKmeans(mat& oldCentroids, mat& newCentroids) {
         distT.col(index1).min(minc);
         assignments[index1] = minc;
         counts(minc) += 1;
-        newCentroids.col(minc) += datasetT.col(index1);
+        newCentroids.col(minc) += dataset.row(index1);
         mincArray[index1] = minc;
     }
     //ofstream out("MPIassi",ios::app);
@@ -246,7 +246,7 @@ double Manager::iterationKmeans(mat& oldCentroids, mat& newCentroids) {
 
     if(this->emptyFlag){
       for(int index1=0;index1<rowNum;index1++)
-        variance(mincArray[index1]) += powDistEvaluate(datasetT.col(index1), oldCentroids.col(mincArray[index1]));
+        variance(mincArray[index1]) += powDistEvaluate(dataset.row(index1), oldCentroids.col(mincArray[index1]));
       if(size > 1)
         MPI_Allreduce(MPI_IN_PLACE, variance.memptr(), clusters, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
       for(int index1 = 0; index1 < clusters; ++index1) {
@@ -307,7 +307,7 @@ int Manager::adjustEmptyCluster(int emptyCluster, mat& oldCentroids, mat& newCen
 
     for(int index1 = 0; index1 < rowNum; ++index1) {
         if(assignments[index1] == maxVarCluster) {
-            const double distance = powDistEvaluate(datasetT.col(index1),
+            const double distance = powDistEvaluate(dataset.row(index1),
                                                     newCentroids.col(maxVarCluster)); // newCentroids?
             //out2 << setprecision(20) << distance << " " << index1 << " " << maxVarCluster << endl;
             if(distance - maxDistance > 1e-4) {
@@ -347,30 +347,12 @@ int Manager::adjustEmptyCluster(int emptyCluster, mat& oldCentroids, mat& newCen
     //MPI_Allreduce(&local,&global,1,MPI_DOUBLE_INT,MPI_MAXLOC,MPI_COMM_WORLD);
     if(rank == tmpRank) {
         assignments[furthestPoint] = emptyCluster;
-        vecdata = datasetT.col(furthestPoint);
+        vecdata = dataset.row(furthestPoint);
         //printf("id:%d,empty:%d\n",furthestPoint+head,emptyCluster);
         MPI_Bcast(vecdata.memptr(), features, MPI_DOUBLE, tmpRank, MPI_COMM_WORLD);
     } else {
         MPI_Bcast(vecdata.memptr(), features, MPI_DOUBLE, tmpRank, MPI_COMM_WORLD);
     }
-
-    /*
-    local.v = maxDistance;
-    local.id = rank;
-    MPI_Allreduce(&local,&global,1,MPI_DOUBLE_INT,MPI_MAXLOC,MPI_COMM_WORLD);
-    if(rank == global.id) {
-        assignments[furthestPoint] = emptyCluster;
-        vecdata = datasetT.col(furthestPoint);
-        //printf("id:%d,empty:%d\n",furthestPoint+head,emptyCluster);
-        MPI_Bcast(vecdata.memptr(), features, MPI_DOUBLE, global.id, MPI_COMM_WORLD);
-    } else {
-        MPI_Bcast(vecdata.memptr(), features, MPI_DOUBLE, global.id, MPI_COMM_WORLD);
-    }
-
-    */
-    //ofstream out1("MPInewCentroids",ios::app);
-    //datasetT.col(furthestPoint).print(out1,"node");
-    // need to be modified maxDistance should reduce!!
 
     // Take that point and add it to the empty cluster.
     newCentroids.col(maxVarCluster) *= (double(counts[maxVarCluster])
@@ -381,11 +363,7 @@ int Manager::adjustEmptyCluster(int emptyCluster, mat& oldCentroids, mat& newCen
     counts[maxVarCluster]--;
     counts[emptyCluster]++;
     newCentroids.col(emptyCluster) = vec(vecdata);
-    //assignments[furthestPoint] = emptyCluster;
-    //ofstream out("MPIassi",ios::app);
-    //for(int i=0;i<nodes;i++)
-    //    out << assignments[i] << " ";
-    //out << endl;
+    
     variance[emptyCluster] = 0;
     if(counts[maxVarCluster] <= 1)
         variance[maxVarCluster] = 0;
