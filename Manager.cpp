@@ -27,8 +27,10 @@ Manager::Manager(int rank, int size, int argc, char* argv[]) {
     variance = Col<double>(clusters);
     counts = Col<long>(clusters);
     assignments = new uword[rowNum];
-    scatterNodeToProcess(argv[4]);
-    broadcastCentroidsToProcess(argv[5]);
+    dataset = mat(rowNum, features, fill::randu);
+    datasetT = dataset.t();
+    // scatterNodeToProcess(argv[4]);
+    // broadcastCentroidsToProcess(argv[5]);
     //printf("Finish load.\n");
 }
 
@@ -42,61 +44,62 @@ void Manager::loadData(double* buffer, int row, FILE* file) {
     return;
 }
 
-void Manager::scatterNodeToProcess(char* strFile) {
-    double* tmpDataset = new double[(rowNum + 1) * features]; // choose best process to broadcast
-    if(rank == size - 1) {
-        FILE* nodeFile = fopen(strFile, "r");
-        //MPI_Request rq[size];
-        //MPI_Status st[size];
-        long tmpRowNum;
-        for(int index1 = 0; index1 < size; index1++) {
-            tmpRowNum = (index1 + 1) * nodes / size - index1 * nodes / size;
+// void Manager::scatterNodeToProcess(char* strFile) {
+//     double* tmpDataset = new double[(rowNum + 1) * features]; // choose best process to broadcast
+//     if(rank == size - 1) {
+//         FILE* nodeFile = fopen(strFile, "r");
+//         //MPI_Request rq[size];
+//         //MPI_Status st[size];
+//         long tmpRowNum;
+//         for(int index1 = 0; index1 < size; index1++) {
+//             tmpRowNum = (index1 + 1) * nodes / size - index1 * nodes / size;
 
-            // read data from nodes.in file
-            loadData(tmpDataset, tmpRowNum, nodeFile);
+//             // read data from nodes.in file
+//             loadData(tmpDataset, tmpRowNum, nodeFile);
 
-            // send data to other processes
-            if(index1 != size - 1)
-                MPI_Send(tmpDataset, tmpRowNum * features, MPI_DOUBLE, index1, 0, MPI_COMM_WORLD);
-        }
-        fclose(nodeFile);
-        //MPI_Waitall(size - 1, rq, st);
-    } else {
-        MPI_Status st;
-        MPI_Recv(tmpDataset, rowNum * features, MPI_DOUBLE, size - 1, 0, MPI_COMM_WORLD, &st);
-    }
-    datasetT = mat(tmpDataset, features, rowNum);
-    dataset = datasetT.t();
-    /*
-    if(rank == 0) {
-        int flag = 1;
-        dataset.print("Rank:0\n");
-        fflush(stdout);
-        MPI_Send(&flag, 1, MPI_INT, 1, 0, MPI_COMM_WORLD);
-    } else {
-        int flag;
-        MPI_Status st;
-        MPI_Recv(&flag, 1, MPI_INT, 0, 0, MPI_COMM_WORLD, &st);
-        dataset.print("Rank:1\n");
-        fflush(stdout);
-    }
+//             // send data to other processes
+//             if(index1 != size - 1)
+//                 MPI_Send(tmpDataset, tmpRowNum * features, MPI_DOUBLE, index1, 0, MPI_COMM_WORLD);
+//         }
+//         fclose(nodeFile);
+//         //MPI_Waitall(size - 1, rq, st);
+//     } else {
+//         MPI_Status st;
+//         MPI_Recv(tmpDataset, rowNum * features, MPI_DOUBLE, size - 1, 0, MPI_COMM_WORLD, &st);
+//     }
 
-    while(1);
-    */
-    //dataset.print("here");
-    // get dataset col quadratic sum
-    /*
-    double sum;
-    ddt = mat(rowNum, 1);
-    for(int index1 = 0; index1 < rowNum; index1++) {
-        sum = 0;
-        for(int index2 = 0; index2 < features; index2++)
-            sum += datasetT(index2, index1) * datasetT(index2, index1);
-        ddt(index1, 0) = sum;
-    }
-    */
-    return;
-}
+//     dataset = mat(tmpDataset, rowNum, features);
+//     datasetT = dataset.t();
+//     /*
+//     if(rank == 0) {
+//         int flag = 1;
+//         dataset.print("Rank:0\n");
+//         fflush(stdout);
+//         MPI_Send(&flag, 1, MPI_INT, 1, 0, MPI_COMM_WORLD);
+//     } else {
+//         int flag;
+//         MPI_Status st;
+//         MPI_Recv(&flag, 1, MPI_INT, 0, 0, MPI_COMM_WORLD, &st);
+//         dataset.print("Rank:1\n");
+//         fflush(stdout);
+//     }
+
+//     while(1);
+//     */
+//     //dataset.print("here");
+//     // get dataset col quadratic sum
+//     /*
+//     double sum;
+//     ddt = mat(rowNum, 1);
+//     for(int index1 = 0; index1 < rowNum; index1++) {
+//         sum = 0;
+//         for(int index2 = 0; index2 < features; index2++)
+//             sum += datasetT(index2, index1) * datasetT(index2, index1);
+//         ddt(index1, 0) = sum;
+//     }
+//     */
+//     return;
+// }
 
 void Manager::broadcastCentroidsToProcess(char* strFile) {
 
@@ -116,8 +119,8 @@ void Manager::broadcastCentroidsToProcess(char* strFile) {
         fclose(centFile);
     }
     MPI_Bcast(tmpCent, clusters * features, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-    centroids = mat(tmpCent, features, clusters);
-    centroidsOther = mat(features, clusters);
+    centroids = mat(tmpCent, clusters, features).t();
+    centroidsOther = mat(clusters, features).t();
     //if(rank == 0)
     //centroids.print();
     /*
