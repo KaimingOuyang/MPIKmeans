@@ -11,9 +11,9 @@ private:
         int id;
     }local,global;
 
-    mat *dataset;
-    mat *centroids;
-    mat *centroidsOther;
+    mat dataset;
+    mat centroids;
+    mat centroidsOther;
     Col<double> variance;
     Col<long> counts;
     //mat ddt;
@@ -26,15 +26,16 @@ private:
     int emptyFlag;
     void scatterNodeToProcess(char* strFile);
     void broadcastCentroidsToProcess(char* strFile);
-    int adjustEmptyCluster(int index, mat* oldCentroids, mat* newCentroids);
-    double powDistEvaluate(const rowvec& a, const rowvec& b);
-    double iterationKmeans(mat* oldCentroids, mat* newCentroids);
+    int adjustEmptyCluster(int index, mat& oldCentroids, mat& newCentroids);
+    double powDistEvaluate(const colvec& a, const colvec& b);
+    double iterationKmeans(mat& oldCentroids, mat& newCentroids);
     void loadData(double* buffer, int row, FILE* file);
 public:
     Manager(int rank, int size, int argc, char* argv[]);
     ~Manager();
     long iteration;
     double iterate();
+    void compute();
     void outputResult(double time);
 };
 
