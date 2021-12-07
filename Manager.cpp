@@ -375,10 +375,10 @@ int Manager::adjustEmptyCluster(int emptyCluster, mat* oldCentroids, mat* newCen
     return 1;
 }
 
-double Manager::powDistEvaluate(const mat& a, const mat& b) {
+double Manager::powDistEvaluate(const rowvec& a, const rowvec& b) {
     double sum = 0;
     for(int index1 = 0; index1 < features; index1++)
-        sum += (a(index1, 0) - b(index1, 0)) * (a(index1, 0) - b(index1, 0));
+        sum += (a(index1) - b(index1)) * (a(index1) - b(index1));
     return sum;
 }
 

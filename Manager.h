@@ -26,9 +26,9 @@ private:
     int emptyFlag;
     void scatterNodeToProcess(char* strFile);
     void broadcastCentroidsToProcess(char* strFile);
-    int adjustEmptyCluster(int index, mat& oldCentroids, mat& newCentroids);
-    double powDistEvaluate(const mat& a, const mat& b);
-    double iterationKmeans(mat& oldCentroids, mat& newCentroids);
+    int adjustEmptyCluster(int index, mat* oldCentroids, mat* newCentroids);
+    double powDistEvaluate(const rowvec& a, const rowvec& b);
+    double iterationKmeans(mat* oldCentroids, mat* newCentroids);
     void loadData(double* buffer, int row, FILE* file);
 public:
     Manager(int rank, int size, int argc, char* argv[]);
