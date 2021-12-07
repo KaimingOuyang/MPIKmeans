@@ -101,7 +101,7 @@ void Manager::loadData(double* buffer, int row, FILE* file) {
 // }
 
 void Manager::broadcastCentroidsToProcess(char* strFile) {
-
+    mat *tmp_matrix;
     double* tmpCent = new double[clusters * features];
     if(rank == 0) {
         FILE* centFile = fopen(strFile, "r");
@@ -118,8 +118,11 @@ void Manager::broadcastCentroidsToProcess(char* strFile) {
         fclose(centFile);
     }
     MPI_Bcast(tmpCent, clusters * features, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-    centroids = (new mat(tmpCent, clusters, features))->t();
-    centroidsOther = (new mat(clusters, features, fill::zeros))->t();
+    tmp_matrix = new mat(tmpCent, clusters, features);
+    centroids = &(tmp_matrix->t());
+
+    tmp_matrix = new mat(clusters, features, fill::zeros);
+    centroidsOther = &(tmp_matrix->t());
     delete tmpCent;
     //if(rank == 0)
     //centroids.print();
@@ -173,14 +176,14 @@ double Manager::iterationKmeans(mat* oldCentroids, mat* newCentroids) {
     for(int index1 = 0; index1 < clusters; index1++) {
         sum = 0;
         for(int index2 = 0; index2 < features; index2++)
-            sum += oldCentroids(index2, index1) * oldCentroids(index2, index1);
+            sum += (*oldCentroids)(index2, index1) * (*oldCentroids)(index2, index1);
         cct(index1) = sum;
     }
 
     // get every distance between all nodes and centroids
     struct timespec st, ed;
     //clock_gettime(CLOCK_REALTIME,&st);
-    mat dist = dataset * oldCentroids;
+    mat dist = (*dataset) * (*oldCentroids);
     //clock_gettime(CLOCK_REALTIME,&ed);
     //double tol = (double)ed.tv_sec - st.tv_sec + (double)(ed.tv_nsec - st.tv_nsec) / 1000000000;
     //printf("Gflops:%lfG/s\n", 2.0 * features * nodes * clusters / tol / 1000000000.0);
