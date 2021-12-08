@@ -33,9 +33,9 @@ Manager::Manager(int rank, int size, int argc, char* argv[]) {
 }
 
 void Manager::loadData(double* buffer, int row, FILE* file) {
-    for(int index2 = 0; index2 < row; index2++)
-        for(int index3 = 0; index3 < features; index3++)
-            if(index3 != features - 1)
+    for (int index2 = 0; index2 < row; index2++)
+        for (int index3 = 0; index3 < features; index3++)
+            if (index3 != features - 1)
                 fscanf(file, "%lf,", &buffer[index2 * features + index3]);
             else
                 fscanf(file, "%lf", &buffer[index2 * features + index3]);
@@ -117,7 +117,7 @@ void Manager::loadData(double* buffer, int row, FILE* file) {
 //         fclose(centFile);
 //     }
 //     MPI_Bcast(tmpCent, clusters * features, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-    
+
 //     delete tmpCent;
 //     //if(rank == 0)
 //     //centroids.print();
@@ -155,28 +155,32 @@ void Manager::compute() {
         //fprintf(fp,"Iteration:%d,diff:%lf\n",manager.iteration,diff);
         //printf("diff:%lf,Iteration:%ld,rank:%d\n",manager.iteration,diff,rank);
         //fflush(stdout);
-    } while(diff > 1e-5 && iteration < 1000);
+    } while (diff > 1e-5 && iteration < 1000);
     //fclose(fp);
     st = MPI_Wtime() - st;
+    double max_time;
+    MPI_Reduce(&st, &max_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+    if (rank == 0)
+        printf("%d %d %d %lf\n", nodes, clusters, features, max_time / iteration);
 }
 
 double Manager::iterate() {
     double cNorm;
 
-    if(iteration % 2 == 0)
+    if (iteration % 2 == 0)
         cNorm = iterationKmeans(centroids, centroidsOther);
     else
         cNorm = iterationKmeans(centroidsOther, centroids);
 
-    if(this->emptyFlag){
-      for(int index1 = 0; index1 < clusters; index1++) {
-          if(counts(index1) == 0) {
-              if(iteration % 2 == 0)
-                  adjustEmptyCluster(index1, centroids, centroidsOther);
-              else
-                  adjustEmptyCluster(index1, centroidsOther, centroids);
-          }
-      }
+    if (this->emptyFlag) {
+        for (int index1 = 0; index1 < clusters; index1++) {
+            if (counts(index1) == 0) {
+                if (iteration % 2 == 0)
+                    adjustEmptyCluster(index1, centroids, centroidsOther);
+                else
+                    adjustEmptyCluster(index1, centroidsOther, centroids);
+            }
+        }
     }
 
     iteration++;
@@ -187,9 +191,9 @@ double Manager::iterationKmeans(mat& oldCentroids, mat& newCentroids) {
     double sum;
     // get centroids col quadratic sum
     Col<double> cct(clusters);
-    for(int index1 = 0; index1 < clusters; index1++) {
+    for (int index1 = 0; index1 < clusters; index1++) {
         sum = 0;
-        for(int index2 = 0; index2 < features; index2++)
+        for (int index2 = 0; index2 < features; index2++)
             sum += oldCentroids(index2, index1) * oldCentroids(index2, index1);
         cct(index1) = sum;
     }
@@ -217,7 +221,7 @@ double Manager::iterationKmeans(mat& oldCentroids, mat& newCentroids) {
     // assign each of nodes to its nearest centroids
     uword minc; // closest cluster
     uword* mincArray = new uword[rowNum];
-    for(int index1 = 0; index1 < rowNum; index1++) {
+    for (int index1 = 0; index1 < rowNum; index1++) {
         distT.col(index1).min(minc);
         assignments[index1] = minc;
         counts(minc) += 1;
@@ -229,7 +233,7 @@ double Manager::iterationKmeans(mat& oldCentroids, mat& newCentroids) {
     //    out << assignments[i] << " ";
     //out << endl;
     //printf("Here\n");
-    if(size > 1) {
+    if (size > 1) {
         MPI_Allreduce(MPI_IN_PLACE, counts.memptr(), clusters, MPI_LONG, MPI_SUM, MPI_COMM_WORLD);
         MPI_Allreduce(MPI_IN_PLACE, newCentroids.memptr(), clusters * features, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
     }
@@ -248,37 +252,37 @@ double Manager::iterationKmeans(mat& oldCentroids, mat& newCentroids) {
     }
     while(1);
         */
-    // This can be optimized (may be deleted)
-    // get new centroids and deal with empty centroids
-    // get variance
+        // This can be optimized (may be deleted)
+        // get new centroids and deal with empty centroids
+        // get variance
     this->emptyFlag = 0;
-    for(int index1 = 0; index1 < clusters; ++index1) {
-        if(counts(index1) != 0)
+    for (int index1 = 0; index1 < clusters; ++index1) {
+        if (counts(index1) != 0)
             newCentroids.col(index1) /= counts(index1);
-        else{
+        else {
             this->emptyFlag = 1;
             newCentroids.col(index1).fill(DBL_MAX); // Invalid value. Maybe changed
         }
     }
 
-    if(this->emptyFlag){
-      for(int index1=0;index1<rowNum;index1++)
-        variance(mincArray[index1]) += powDistEvaluate(dataset.row(index1).t(), oldCentroids.col(mincArray[index1]));
-      if(size > 1)
-        MPI_Allreduce(MPI_IN_PLACE, variance.memptr(), clusters, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-      for(int index1 = 0; index1 < clusters; ++index1) {
-        if(counts(index1) <= 1)
-            variance(index1) = 0;
-        else
-            variance(index1) /= counts(index1);
-      }
+    if (this->emptyFlag) {
+        for (int index1 = 0;index1 < rowNum;index1++)
+            variance(mincArray[index1]) += powDistEvaluate(dataset.row(index1).t(), oldCentroids.col(mincArray[index1]));
+        if (size > 1)
+            MPI_Allreduce(MPI_IN_PLACE, variance.memptr(), clusters, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+        for (int index1 = 0; index1 < clusters; ++index1) {
+            if (counts(index1) <= 1)
+                variance(index1) = 0;
+            else
+                variance(index1) /= counts(index1);
+        }
     }
     delete[] mincArray;
 
 
     // Calculate cluster distortion for this iteration.
     double cNorm = 0.0;
-    for(int index1 = 0; index1 < clusters; ++index1)
+    for (int index1 = 0; index1 < clusters; ++index1)
         cNorm += powDistEvaluate(oldCentroids.col(index1), newCentroids.col(index1)); // problem: why not
     return std::sqrt(cNorm);
 }
@@ -290,7 +294,7 @@ int Manager::adjustEmptyCluster(int emptyCluster, mat& oldCentroids, mat& newCen
     //printf("Enter\n");
     // If the cluster with maximum variance has variance of 0, then we can't
     // continue.  All the points are the same.
-    if(variance[maxVarCluster] == 0.0)
+    if (variance[maxVarCluster] == 0.0)
         return 0;
     /*
     if(rank == 0) {
@@ -322,12 +326,12 @@ int Manager::adjustEmptyCluster(int emptyCluster, mat& oldCentroids, mat& newCen
     double maxDistance = -1;
     //ofstream out2("MPIdis",ios::app);
 
-    for(int index1 = 0; index1 < rowNum; ++index1) {
-        if(assignments[index1] == maxVarCluster) {
+    for (int index1 = 0; index1 < rowNum; ++index1) {
+        if (assignments[index1] == maxVarCluster) {
             const double distance = powDistEvaluate(dataset.row(index1).t(),
-                                                    newCentroids.col(maxVarCluster)); // newCentroids?
-            //out2 << setprecision(20) << distance << " " << index1 << " " << maxVarCluster << endl;
-            if(distance - maxDistance > 1e-4) {
+                newCentroids.col(maxVarCluster)); // newCentroids?
+//out2 << setprecision(20) << distance << " " << index1 << " " << maxVarCluster << endl;
+            if (distance - maxDistance > 1e-4) {
                 maxDistance = distance;
                 furthestPoint = index1;
                 //out2 << "MAX:" << maxDistance << " " << furthestPoint << endl;
@@ -356,13 +360,13 @@ int Manager::adjustEmptyCluster(int emptyCluster, mat& oldCentroids, mat& newCen
     int tmpRank = (1 << 31) - 1;
 
     MPI_Allreduce(&maxDistance, &tmpMaxDist, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-    if(abs(maxDistance - tmpMaxDist) < 1e-5) {
+    if (abs(maxDistance - tmpMaxDist) < 1e-5) {
         MPI_Allreduce(&rank, &tmpRank, 1, MPI_INT, MPI_MIN, MPI_COMM_WORLD);
     } else {
         MPI_Allreduce(MPI_IN_PLACE, &tmpRank, 1, MPI_INT, MPI_MIN, MPI_COMM_WORLD);
     }
     //MPI_Allreduce(&local,&global,1,MPI_DOUBLE_INT,MPI_MAXLOC,MPI_COMM_WORLD);
-    if(rank == tmpRank) {
+    if (rank == tmpRank) {
         assignments[furthestPoint] = emptyCluster;
         vecdata = dataset.row(furthestPoint).t();
         //printf("id:%d,empty:%d\n",furthestPoint+head,emptyCluster);
@@ -373,35 +377,35 @@ int Manager::adjustEmptyCluster(int emptyCluster, mat& oldCentroids, mat& newCen
 
     // Take that point and add it to the empty cluster.
     newCentroids.col(maxVarCluster) *= (double(counts[maxVarCluster])
-                                        / double(counts[maxVarCluster] - 1));
+        / double(counts[maxVarCluster] - 1));
     newCentroids.col(maxVarCluster) -= (1.0
-                                        / (counts[maxVarCluster] - 1.0))
-                                       * vec(vecdata);
+        / (counts[maxVarCluster] - 1.0))
+        * vec(vecdata);
     counts[maxVarCluster]--;
     counts[emptyCluster]++;
     newCentroids.col(emptyCluster) = vec(vecdata);
 
     variance[emptyCluster] = 0;
-    if(counts[maxVarCluster] <= 1)
+    if (counts[maxVarCluster] <= 1)
         variance[maxVarCluster] = 0;
     else {
         variance[maxVarCluster] = (1.0 / counts[maxVarCluster])
-                                  * ((counts[maxVarCluster] + 1) * variance[maxVarCluster]
-                                     - tmpMaxDist);
+            * ((counts[maxVarCluster] + 1) * variance[maxVarCluster]
+                - tmpMaxDist);
     }
     return 1;
 }
 
 double Manager::powDistEvaluate(const colvec& a, const colvec& b) {
     double sum = 0;
-    for(int index1 = 0; index1 < features; index1++)
+    for (int index1 = 0; index1 < features; index1++)
         sum += (a(index1) - b(index1)) * (a(index1) - b(index1));
     return sum;
 }
 
 void Manager::outputResult(double time) {
 
-    if(rank == 0) {
+    if (rank == 0) {
         uword* finalAssign;
         int* displs;
         int* recvcounts;
@@ -411,7 +415,7 @@ void Manager::outputResult(double time) {
         FILE* fp = fopen(outcsv, "w");
         displs = new int[size];
         recvcounts = new int[size];
-        for(int index1 = 0; index1 < size; index1++) {
+        for (int index1 = 0; index1 < size; index1++) {
             displs[index1] = index1 * nodes / size;
             recvcounts[index1] = (index1 + 1) * nodes / size - displs[index1];
         }
@@ -419,7 +423,7 @@ void Manager::outputResult(double time) {
         //    printf("%u ",assignments[i]);
         finalAssign = new uword[nodes]; // memory may not hold whole dataset, should be changed in future
         MPI_Gatherv(assignments, rowNum, MPI_INT, finalAssign, recvcounts, displs, MPI_INT, 0, MPI_COMM_WORLD);
-        for(int index = 0; index < nodes; index++)
+        for (int index = 0; index < nodes; index++)
             fprintf(fp, "%u\n", finalAssign[index]);
         delete[] finalAssign;
         delete[] displs;
