@@ -161,7 +161,7 @@ void Manager::compute() {
     double max_time;
     MPI_Reduce(&st, &max_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
     if (rank == 0)
-        printf("%d %d %d %lf\n", nodes, clusters, features, max_time / iteration);
+        printf("%d %lf\n", size / 18, max_time / iteration);
 }
 
 double Manager::iterate() {
