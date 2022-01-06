@@ -149,6 +149,7 @@ void Manager::compute() {
     counts = Col<long>(clusters, fill::zeros);
     variance = Col<double>(clusters, fill::zeros);
 
+    comm_time = 0.0;
     double st = MPI_Wtime();
     do {
         diff = iterate();
@@ -158,10 +159,11 @@ void Manager::compute() {
     } while (diff > 1e-5 && iteration < 1000);
     //fclose(fp);
     st = MPI_Wtime() - st;
-    double max_time;
+    double max_time, max_comm_time;
     MPI_Reduce(&st, &max_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&comm_time, &max_comm_time, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
     if (rank == 0)
-        printf("%d %lf\n", size / 18, max_time / iteration);
+        printf("%d %lf %lf\n", size / 18, max_time / iteration * 1e3, comm_time / size / iteration * 1e3);
 }
 
 double Manager::iterate() {
@@ -233,10 +235,12 @@ double Manager::iterationKmeans(mat& oldCentroids, mat& newCentroids) {
     //    out << assignments[i] << " ";
     //out << endl;
     //printf("Here\n");
+    comm_time -= MPI_Wtime();
     if (size > 1) {
         MPI_Allreduce(MPI_IN_PLACE, counts.memptr(), clusters, MPI_LONG, MPI_SUM, MPI_COMM_WORLD);
         MPI_Allreduce(MPI_IN_PLACE, newCentroids.memptr(), clusters * features, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
     }
+    comm_time += MPI_Wtime();
     /*
     if(rank == 0) {
         int flag = 1;

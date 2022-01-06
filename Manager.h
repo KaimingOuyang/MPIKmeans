@@ -18,6 +18,7 @@ private:
     Col<long> counts;
     //mat ddt;
     uword* assignments;
+    double comm_time;
     int rank,size;
     long head;
     long rowNum,nodes,clusters,features;
