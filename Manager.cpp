@@ -142,7 +142,7 @@ void Manager::loadData(double* buffer, int row, FILE* file) {
 
 void Manager::compute() {
     double diff;
-
+    arma_rng::set_seed(0);
     dataset = mat(rowNum, features, fill::randu);
     centroids = mat(features, clusters, fill::randn);
     centroidsOther = mat(features, clusters, fill::zeros);
