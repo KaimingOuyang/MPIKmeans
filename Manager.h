@@ -19,7 +19,7 @@ private:
     //mat ddt;
     uword* assignments;
     double comm_time;
-    int rank,size;
+    int rank,size,max_iter;
     long head;
     long rowNum,nodes,clusters,features;
     //typedef mat* MatP;

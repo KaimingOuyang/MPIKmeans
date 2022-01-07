@@ -18,6 +18,7 @@ Manager::Manager(int rank, int size, int argc, char* argv[]) {
     this->nodes = atoi(argv[1]);
     this->features = atoi(argv[2]);
     this->clusters = atoi(argv[3]);
+    this->max_iter = atoi(argv[4]);
     this->rowNum = (rank + 1) * nodes / size - rank * nodes / size;
     //printf("rank:%d,rowNum:%d\n",rank,clusters);
 
@@ -156,7 +157,7 @@ void Manager::compute() {
         //fprintf(fp,"Iteration:%d,diff:%lf\n",manager.iteration,diff);
         //printf("diff:%lf,Iteration:%ld,rank:%d\n",manager.iteration,diff,rank);
         //fflush(stdout);
-    } while (diff > 1e-5 && iteration < 1000);
+    } while (diff > 1e-5 && iteration < max_iter);
     //fclose(fp);
     st = MPI_Wtime() - st;
     double max_time, max_comm_time;
