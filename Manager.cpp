@@ -151,6 +151,7 @@ void Manager::compute() {
     variance = Col<double>(clusters, fill::zeros);
 
     comm_time = 0.0;
+    compute_time = 0.0;
     double st = MPI_Wtime();
     do {
         diff = iterate();
@@ -160,11 +161,12 @@ void Manager::compute() {
     } while (diff > 1e-5 && iteration < max_iter);
     //fclose(fp);
     st = MPI_Wtime() - st;
-    double max_time, max_comm_time;
+    double max_time, max_comm_time, max_compute_time;
     MPI_Reduce(&st, &max_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&comm_time, &max_comm_time, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&comm_time, &max_comm_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&compute_time, &max_compute_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
     if (rank == 0)
-        printf("%d %lf %lf\n", size / 18, max_time / iteration * 1e3, comm_time / size / iteration * 1e3);
+        printf("%d %lf %lf %lf %lf\n", size / 18, max_time / iteration * 1e3, max_comm_time / iteration * 1e3, max_compute_time / iteration * 1e3, (max_comm_time + max_compute_time) / iteration * 1e3);
 }
 
 double Manager::iterate() {
@@ -204,11 +206,13 @@ double Manager::iterationKmeans(mat& oldCentroids, mat& newCentroids) {
     // get every distance between all nodes and centroids
     struct timespec st, ed;
     //clock_gettime(CLOCK_REALTIME,&st);
+    compute_time -= MPI_Wtime();
     mat dist = dataset * oldCentroids;
     //clock_gettime(CLOCK_REALTIME,&ed);
     //double tol = (double)ed.tv_sec - st.tv_sec + (double)(ed.tv_nsec - st.tv_nsec) / 1000000000;
     //printf("Gflops:%lfG/s\n", 2.0 * features * nodes * clusters / tol / 1000000000.0);
     dist *= -2;
+    compute_time += MPI_Wtime();
     //dist.each_col() += ddt;
     mat distT = dist.t();
     distT.each_col() += cct;
