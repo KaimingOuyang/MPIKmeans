@@ -161,12 +161,12 @@ void Manager::compute() {
     } while (diff > 1e-5 && iteration < max_iter);
     //fclose(fp);
     st = MPI_Wtime() - st;
-    double max_time, max_comm_time, max_compute_time;
+    double max_time, sum_comm_time, sum_compute_time;
     MPI_Reduce(&st, &max_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&comm_time, &max_comm_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&compute_time, &max_compute_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&comm_time, &sum_comm_time, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&compute_time, &sum_compute_time, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
     if (rank == 0)
-        printf("%d %lf %lf %lf %lf\n", size / 18, max_time / iteration * 1e3, max_comm_time / iteration * 1e3, max_compute_time / iteration * 1e3, (max_comm_time + max_compute_time) / iteration * 1e3);
+        printf("%d %lf %lf %lf %lf\n", size / 18, max_time / iteration * 1e3, sum_comm_time / size / iteration * 1e3, sum_compute_time  / size / iteration * 1e3, (sum_comm_time + sum_compute_time) / iteration * 1e3);
 }
 
 double Manager::iterate() {
