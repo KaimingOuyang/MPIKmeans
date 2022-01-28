@@ -166,7 +166,7 @@ void Manager::compute() {
     MPI_Reduce(&comm_time, &sum_comm_time, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
     MPI_Reduce(&compute_time, &sum_compute_time, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
     if (rank == 0)
-        printf("%d %lf %lf %lf %lf\n", size / 18, max_time / iteration * 1e3, sum_comm_time / size / iteration * 1e3, sum_compute_time  / size / iteration * 1e3, (sum_comm_time + sum_compute_time) / iteration * 1e3);
+        printf("%d %lf %lf %lf %lf\n", size / 18, max_time / iteration * 1e3, sum_comm_time / size / iteration * 1e3, sum_compute_time  / size / iteration * 1e3, (sum_comm_time + sum_compute_time) / size / iteration * 1e3);
 }
 
 double Manager::iterate() {
